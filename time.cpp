@@ -13,15 +13,20 @@
 #include<sys/time.h>
 
 int main( int argc , char * argv[] )  {
-    struct timeval tv;
+/*    struct timeval tv;
     struct timezone tz;
-    gettimeofday(&tv,&tz);
+    gettimeofday(&tv,NULL);
 
     std::cout << "tv_sec:" << tv.tv_sec << std::endl;   //秒数
     std::cout << "tv_usec:" << tv.tv_usec << std::endl; //微秒数
     std::cout << "tz_minuteswest:" << tz.tz_minuteswest << std::endl;  //和Greewich时间差了多少分钟
     std::cout << "tz_dsttime:" << tz.tz_dsttime << std::endl;  //日光节约时间的状态
+*/
 
+    time_t now = time(NULL);
+    std::cout << now << std::endl;
+    char *t = ctime(&now);
+    std::cout << t << std::endl;
     return EXIT_SUCCESS;
 }
 
