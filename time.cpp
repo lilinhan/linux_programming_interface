@@ -17,10 +17,10 @@ int main( int argc , char * argv[] )  {
     struct timezone tz;
     gettimeofday(&tv,&tz);
 
-    std::cout << "tv_sec:" << tv.tv_sec << std::endl;
-    std::cout << "tv_usec:" << tv.tv_usec << std::endl;
-    std::cout << "tz_minuteswest:" << tz.tz_minuteswest << std::endl;
-    std::cout << "tz_dsttime:" << tz.tz_dsttime << std::endl;
+    std::cout << "tv_sec:" << tv.tv_sec << std::endl;   //秒数
+    std::cout << "tv_usec:" << tv.tv_usec << std::endl; //微秒数
+    std::cout << "tz_minuteswest:" << tz.tz_minuteswest << std::endl;  //和Greewich时间差了多少分钟
+    std::cout << "tz_dsttime:" << tz.tz_dsttime << std::endl;  //日光节约时间的状态
 
     return EXIT_SUCCESS;
 }
