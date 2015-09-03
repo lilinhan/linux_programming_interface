@@ -22,7 +22,7 @@ int main( int argc , char * argv[] )  {
     char buf[BUF_LEN];
     struct inotify_event *event;
     char * p;
-    std::string path = "/home/lewin/linux_programming_interface/hello.txt";
+    std::string path = "/home/lewin/linux_programming_interface";
 
     inotifyfd = inotify_init();
     if(inotifyfd == -1)  {
