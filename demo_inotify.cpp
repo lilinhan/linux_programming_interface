@@ -50,6 +50,9 @@ int main( int argc , char * argv[] )  {
         if( event->mask & IN_OPEN )  {
             std::cout << "IN_OPEN" <<std::endl;
         }
+        if( event->mask & IN_MODIFY )  {
+            std::cout << "IN_MODIFY" <<std::endl;
+        }
     }
     return EXIT_SUCCESS;
 }
