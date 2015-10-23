@@ -1,0 +1,18 @@
+/*************************************************************************
+    > File Name: aio.cpp
+    > Author: lewin
+    > Mail: lilinhan1303@gmail.com
+    > Company:  Xiyou Linux Group
+    > Created Time: Mon 19 Oct 2015 18:46:15 CST
+ ************************************************************************/
+
+#include<iostream>
+#include<string>
+#include<cstdlib>
+#include<cerrno>
+
+int main( int argc , char * argv[] )  {
+
+    return EXIT_SUCCESS;
+}
+
