@@ -3,7 +3,7 @@
     > Author: lewin
     > Mail: lilinhan1303@gmail.com
     > Company:  Xiyou Linux Group
-    > Created Time: Mon 26 Oct 2015 10:57:02 CST
+    > Created Time: Mon 02 Nov 2015 23:01:35 CST
  ************************************************************************/
 
 #include<sys/types.h>
@@ -17,96 +17,60 @@
 #include<netinet/in.h>
 #include<arpa/inet.h>
 #include<unistd.h>
-#include<assert.h>
 
-#include<event.h>
-#include<event2/bufferevent.h>
+#define SERVER_PORT 8080
+int debug = 0;
 
-#define LISTEN_PORT 9999
-#define LISTEN_BACKLOG 32
+struct client{
+    int fd;
+    struct bufferevent *buf_ev;
+};
 
-void do_accept(evutil_socket_t listener, short event, void *arg);
-void read_cb(struct bufferevent *bev, void *arg);
-void error_cb(struct bufferevent *bev, short event, void *arg);
-void write_cb(struct bufferevent *bev, void *arg);
+int set_nonblock(int fd);
+void buf_read_callback(struct bufferevent *incoming, void *arg);
+void buf_write_callback(struct bufferevent *bev, void *arg);
+void buf_error_callback(struct bufferevent *bev, short what, void *arg);
+void accept_callback(int fd, short ev,void *arg);
 
 int main(int argc , char * argv[])  {
-    int ret;
-    evutil_socket_t listener;
-    listener = socket(AF_INET, SOCK_STREAM, 0);
-    assert(listener > 0);
-    evutil_make_listen_socket_reuseable(listener);
+    int socketlisten;
+    struct sockaddr_in addresslisten;
+    struct event accept_event;
 
-    struct sockaddr_in sin;
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = 0;
-    sin.sin_port = htons(LISTEN_PORT);
+    int reuse = 1;
+    event_init();   //貌似是库里面自带的
 
-    if(bind(listener, (struct sockaddr *)&sin, sizeof(sin)) < 0)  {
-        perror("bind");
+    socketlisten = socket(AF_INET, SOCK_STREAM, 0);
+    if(socketlisten < 0) {
+        fprintf(stderr, "Failed to create listen socket");
         return 1;
     }
 
-    if(listen(listener, LISTEN_BACKLOG) < 0)  {
-        perror("listen");
+    memset(&addresslisten, 0, sizeof(addresslisten));
+
+    addresslisten.sin_family = AF_INET;
+    addresslisten.sin_addr.s_addr = INADDR_ANY; // INADDR_ANY??
+    addresslisten.sin_port = htons(SERVER_PORT);
+
+    if(bind(socketlisten, (struct sockaddr *)&addresslisten, sizeof(addresslisten)) < 0) {
+        fprintf(stderr, "Failed to bind");
         return 1;
     }
 
-    printf("listen....");
+    if(listen(socketlisten, 5) < 0) {
+        fprintf(stderr, "Failed to listen");
+        return 1;
+    }
 
-    evutil_make_socket_nonblocking(listener);
+    setsockopt(socketlisten, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+    set_nonblock(socketlisten);
 
-    struct event_base *base = event_base_new();
-    assert(base != NULL);
-    struct event *listen_event;
-    listen_event = event_new(base, listener, EV_READ | EV_PERSIST, do_accept, (void *)base);
-    event_add(listen_event, NULL);
-    event_base_dispatch(base);
+    event_set(&accept_event, socketlisten, EV_READ | EV_PERSIST, accept_callback, NULL);
+    event_add(&accept_event, NULL);
+    event_dispatch();
+    close(socketlisten);
 
-    printf("The END...");
+
     return EXIT_SUCCESS;
-}
-
-void do_accept(evutil_socket_t listener, short event, void *arg) {
-    struct event_base *base = (struct event_base *)arg;
-    evutil_socket_t fd;
-    struct sockaddr_in sin;
-    socklen_t slen = sizeof(sin);
-    fd = accept(listener, (struct sockaddr *)&sin, &slen);
-    if(fd < 0)  {
-        perror("accept");
-        return;
-    }
-    if(fd > FD_SETSIZE)
-}
-
-void read_cb(struct bufferevent *bev, void *arg)
-{
-#define MAX_LINE 256
-    char line[MAX_LINE + 1];
-    int n;
-    evutil_socket_t fd = bufferevent_getfd(bev);
-
-    while(n = bufferevent_read(bev, line, MAX_LINE), n > 0) {
-        line[n] = '\0';
-        printf("fd = %u, read line: %s\n", fd, line);
-
-        bufferevent_write(bev, line, n);
-    }
-}
-
-void write_cb(struct bufferevent *bev, void *arg) {}
-
-void error_cb(struct bufferevent *bev, short event, void *arg) {
-    evutil_socket_t fd = bufferevent_getfd(bev);
-    printf("fd = %u, ", fd);
-    if(event & BEV_EVENT_TIMEOUT) {
-        printf("Time out\n");
-    }else if(event & BEV_EVENT_EOF)  {
-        printf("connection closed!\n");
-    }else if(event & BEV_EVENT_ERROR)  {
-        printf("some one error\n");
-    }
-    bufferevent_free(bev);
 }
 
