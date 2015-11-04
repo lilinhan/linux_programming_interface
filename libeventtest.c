@@ -17,6 +17,13 @@
 #include<netinet/in.h>
 #include<arpa/inet.h>
 #include<unistd.h>
+#include<fcntl.h>
+
+#include<event.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<arpa/inet.h>
 
 #define SERVER_PORT 8080
 int debug = 0;
@@ -73,4 +80,63 @@ int main(int argc , char * argv[])  {
 
     return EXIT_SUCCESS;
 }
+
+int set_nonblock(int fd) {
+    int flags;
+
+    flags = fcntl(fd, F_GETFL);
+    flags |= O_NONBLOCK;
+    fcntl(fd, F_SETFL, flags);
+}
+
+void buf_read_callback(struct bufferevent *incoming, void *arg) {
+    struct evbuffer *evreturn;
+    char *req;
+
+    req = evbuffer_readline(incoming->input);
+    if(req == NULL) {
+        return;
+    }
+
+    evbuffer_add_printf(evreturn, "You said %s \n", req);
+    bufferevent_write_buffer(incoming, evreturn);
+    evbuffer_free(evreturn);
+    free(req);
+}
+
+void buf_write_callback(struct bufferevent *bev, void *arg) {
+
+}
+
+void buf_error_callback(struct bufferevent *bev, short what, void *arg)  {
+    struct client *client = (struct client *)arg;
+    bufferevent_free(client->buf_ev);
+    close(client->fd);
+    free(client);
+}
+
+void accept_callback(int fd, short ev, void *arg) {
+    int client_fd;
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    struct client *client;
+
+    client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
+    if(client_fd < 0) {
+        warn("Client:accept() failed");
+        return;
+    }
+
+    set_nonblock(client_fd);
+
+    client = calloc(1, sizeof(*client));
+    if(client == NULL) {
+        err(1, "malloc failed");
+    }
+    client->fd = client_fd;
+    client->buf_ev = bufferevent_new(client_fd, buf_read_callback, buf_write_callback, buf_error_callback, client);
+    bufferevent_enable(client->buf_ev, EV_READ);
+}
+
+
 
