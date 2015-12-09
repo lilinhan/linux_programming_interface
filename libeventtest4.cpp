@@ -7,6 +7,7 @@
  ************************************************************************/
 
 #include<iostream>
+#include<cstdlib>
 #include<event.h>
 
 struct event ev;
